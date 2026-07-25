@@ -1,0 +1,9 @@
+[project]
+name = "code-review-agent"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "google-antigravity==0.1.7",
+]

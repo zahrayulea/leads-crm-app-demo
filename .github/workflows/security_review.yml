@@ -1,0 +1,41 @@
+name: AI Code Security and Quality Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    container:
+      image: ghcr.io/astral-sh/uv:python3.12-bookworm
+
+    steps:
+      - name: Install git
+        run: apt-get update && apt-get install -y git
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run security review
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          git config --global --add safe.directory $GITHUB_WORKSPACE
+          uv run --project code_review_agent code_review_agent/review_agent.py .
+      - name: Post findings as PR comment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('code_review.md', 'utf8');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: body
+            });
